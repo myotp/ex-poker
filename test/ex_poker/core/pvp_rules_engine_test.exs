@@ -1,4 +1,4 @@
-defmodule ExPoer.Core.PvpRulesEngineTest do
+defmodule ExPoker.Core.PvpRulesEngineTest do
   use ExUnit.Case
 
   alias ExPoker.Core.PvpRulesEngine
