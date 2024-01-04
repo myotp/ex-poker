@@ -37,15 +37,14 @@ defmodule ExPoker.Core.Ranking do
 
   @type t :: %__MODULE__{
           type: hand_type(),
-          order_key: [pos_integer()],
+          kickers: [pos_integer()],
           best_hand: [Card.t()]
         }
 
   defstruct [
     # 具体类型，同花顺，葫芦等
     :type,
-    # 用来方便比较的key
-    :order_key,
+    :kickers,
     # 最好的5张牌，注意可能并不唯一
     :best_hand
   ]
@@ -122,14 +121,14 @@ defmodule ExPoker.Core.Ranking do
               14 ->
                 %Ranking{
                   type: :royal_flush,
-                  order_key: [],
+                  kickers: [],
                   best_hand: cards
                 }
 
               _ ->
                 %Ranking{
                   type: :straight_flush,
-                  order_key: [high_card.rank],
+                  kickers: [high_card.rank],
                   best_hand: cards
                 }
             end
@@ -148,12 +147,12 @@ defmodule ExPoker.Core.Ranking do
 
       {[four | _] = four_cards, rest} ->
         best_high_cards = get_top_n_cards(rest, 1)
-        high_cards_key = high_cards_order_key(best_high_cards)
+        high_cards_key = high_cards_kickers(best_high_cards)
         best_hand = pretty_sort_by_suit(four_cards) ++ best_high_cards
 
         %Ranking{
           type: :four_of_a_kind,
-          order_key: [four.rank | high_cards_key],
+          kickers: [four.rank | high_cards_key],
           best_hand: best_hand
         }
     end
@@ -174,7 +173,7 @@ defmodule ExPoker.Core.Ranking do
 
             %Ranking{
               type: :full_house,
-              order_key: [three.rank, two.rank],
+              kickers: [three.rank, two.rank],
               best_hand: best_hand
             }
         end
@@ -194,11 +193,11 @@ defmodule ExPoker.Core.Ranking do
     case Enum.count(cards) >= 5 do
       true ->
         best_hand = get_top_n_cards(cards, 5)
-        high_cards_key = high_cards_order_key(best_hand)
+        high_cards_key = high_cards_kickers(best_hand)
 
         %Ranking{
           type: :flush,
-          order_key: high_cards_key,
+          kickers: high_cards_key,
           best_hand: best_hand
         }
 
@@ -215,7 +214,7 @@ defmodule ExPoker.Core.Ranking do
       [high_card | _] = cards ->
         %Ranking{
           type: :straight,
-          order_key: [high_card.rank],
+          kickers: [high_card.rank],
           best_hand: cards
         }
     end
@@ -229,12 +228,12 @@ defmodule ExPoker.Core.Ranking do
 
       {[three | _] = three_cards, rest} ->
         best_high_cards = get_top_n_cards(rest, 2)
-        high_cards_key = high_cards_order_key(best_high_cards)
+        high_cards_key = high_cards_kickers(best_high_cards)
         best_hand = pretty_sort_by_suit(three_cards) ++ best_high_cards
 
         %Ranking{
           type: :three_of_a_kind,
-          order_key: [three.rank | high_cards_key],
+          kickers: [three.rank | high_cards_key],
           best_hand: best_hand
         }
     end
@@ -259,7 +258,7 @@ defmodule ExPoker.Core.Ranking do
 
             %Ranking{
               type: :two_pairs,
-              order_key: [big_two.rank, small_two.rank, high_card.rank],
+              kickers: [big_two.rank, small_two.rank, high_card.rank],
               best_hand: best_hand
             }
         end
@@ -273,12 +272,12 @@ defmodule ExPoker.Core.Ranking do
 
       {[two | _] = two_cards, rest} ->
         best_high_cards = get_top_n_cards(rest, 3)
-        high_cards_key = high_cards_order_key(best_high_cards)
+        high_cards_key = high_cards_kickers(best_high_cards)
         best_hand = pretty_sort_by_suit(two_cards) ++ best_high_cards
 
         %Ranking{
           type: :pair,
-          order_key: [two.rank | high_cards_key],
+          kickers: [two.rank | high_cards_key],
           best_hand: best_hand
         }
     end
@@ -286,8 +285,8 @@ defmodule ExPoker.Core.Ranking do
 
   defp high_card?(hand) do
     best_hand = get_top_n_cards(hand, 5)
-    order_key = high_cards_order_key(best_hand)
-    %Ranking{type: :high_card, order_key: order_key, best_hand: best_hand}
+    kickers = high_cards_kickers(best_hand)
+    %Ranking{type: :high_card, kickers: kickers, best_hand: best_hand}
   end
 
   # ======================== 其它辅助函数 =============================
@@ -301,7 +300,7 @@ defmodule ExPoker.Core.Ranking do
   defp suit_to_pretty_order(:clubs), do: 2
   defp suit_to_pretty_order(:diamonds), do: 1
 
-  defp high_cards_order_key(hand) do
+  defp high_cards_kickers(hand) do
     Enum.map(hand, fn card -> card.rank end)
   end
 
