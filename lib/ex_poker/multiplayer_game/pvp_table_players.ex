@@ -34,6 +34,13 @@ defmodule ExPoker.MultiplayerGame.PvpTablePlayers do
     end
   end
 
+  def start_game(%__MODULE__{} = state, username) do
+    case find_player_by_username(state, username) do
+      %Player{pos: pos} ->
+        {:ok, put_in(state.players[pos].status, :WAITING)}
+    end
+  end
+
   def leave_table(%__MODULE__{players: players} = state, username) do
     case find_player_by_username(state, username) do
       %Player{pos: pos, chips: chips} ->

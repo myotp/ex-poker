@@ -40,13 +40,32 @@ defmodule ExPoker.MultiplayerGame.PvpTableServerTest do
     end
   end
 
-  describe "正确通知客户端进程" do
+  describe "start_game" do
+    test "玩家加入桌子并启动游戏" do
+      {:ok, pid} = start_supervised({PvpTableServer, @table_cfg})
+      :ok = Table.join_table(pid, "anna")
+      assert :ok == Table.start_game(pid, "anna")
+    end
+  end
+
+  describe "玩家加入离开桌子过程通知所有玩家" do
     test "第一个玩家加入, 自己收到玩家信息" do
       {:ok, pid} = start_supervised({PvpTableServer, @table_cfg})
       :ok = Table.join_table(pid, "anna")
 
       assert_receive {:"$gen_cast",
                       {:players_info, [%{status: :JOINED, pos: 1, username: "anna", chips: 500}]}}
+    end
+
+    test "唯一玩家离开桌子可以正常工作" do
+      {:ok, pid} = start_supervised({PvpTableServer, @table_cfg})
+      :ok = Table.join_table(pid, "anna")
+      flush(1)
+      {:ok, _} = Table.leave_table(pid, "anna")
+      :ok = Table.join_table(pid, "bobo")
+
+      assert_receive {:"$gen_cast",
+                      {:players_info, [%{status: :JOINED, pos: 1, username: "bobo", chips: 500}]}}
     end
 
     test "第二个玩家加入, 两个玩家都收到玩家信息" do
@@ -75,14 +94,24 @@ defmodule ExPoker.MultiplayerGame.PvpTableServerTest do
       assert_receive {:"$gen_cast",
                       {:players_info, [%{status: :JOINED, pos: 2, username: "bobo", chips: 500}]}}
     end
+  end
 
-    defp flush(n) do
-      1..n
-      |> Enum.each(fn _ ->
-        receive do
-          _ -> :ok
-        end
-      end)
+  describe "玩家状态变化(开始游戏)通知所有玩家" do
+    test "玩家开始游戏通知所有玩家" do
+      {:ok, pid} = start_supervised({PvpTableServer, @table_cfg})
+      :ok = Table.join_table(pid, "anna")
+      assert_receive {:"$gen_cast", {:players_info, [%{status: :JOINED}]}}
+      assert :ok == Table.start_game(pid, "anna")
+      assert_receive {:"$gen_cast", {:players_info, [%{status: :WAITING}]}}
     end
+  end
+
+  defp flush(n) do
+    1..n
+    |> Enum.each(fn _ ->
+      receive do
+        _ -> :ok
+      end
+    end)
   end
 end

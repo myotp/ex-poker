@@ -60,4 +60,13 @@ defmodule ExPoker.MultiplayerGame.PvpTablePlayersTest do
       assert {:ok, _table} = PvpTablePlayers.join_table(table, "cindy", 500)
     end
   end
+
+  describe "start_game/2" do
+    test "玩家加入桌子并开始游戏" do
+      table = PvpTablePlayers.new(2)
+      {:ok, table} = PvpTablePlayers.join_table(table, "anna", 500)
+      assert {:ok, table} = PvpTablePlayers.start_game(table, "anna")
+      assert table.players[1].status == :WAITING
+    end
+  end
 end

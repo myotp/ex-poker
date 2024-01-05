@@ -32,15 +32,11 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
 
     case PvpTablePlayers.join_table(players, username, buyin) do
       {:ok, updated_players} ->
-        user_pids = Map.put(user_pids, username, client_pid)
-
-        new_state = %__MODULE__{
+        new_state =
           state
-          | players: updated_players,
-            user_pids: user_pids
-        }
+          |> Map.put(:user_pids, Map.put(user_pids, username, client_pid))
+          |> update_table_players(updated_players)
 
-        broadcast_players_info(new_state)
         {:reply, :ok, new_state}
 
       {:error, _reason} = error ->
@@ -50,15 +46,35 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
 
   def handle_call({:leave_table, username}, _from, %__MODULE__{user_pids: user_pids} = state) do
     case PvpTablePlayers.leave_table(state.players, username) do
-      {:ok, chips_left, update_players} ->
-        user_pids = Map.delete(user_pids, username)
-        new_state = %__MODULE__{state | players: update_players, user_pids: user_pids}
-        broadcast_players_info(new_state)
+      {:ok, chips_left, updated_players} ->
+        new_state =
+          state
+          |> Map.put(:user_pids, Map.delete(user_pids, username))
+          |> update_table_players(updated_players)
+
         {:reply, {:ok, chips_left}, new_state}
 
       {:error, _reason} = error ->
         {:reply, error, state}
     end
+  end
+
+  def handle_call(
+        {:start_game, username},
+        _from,
+        %__MODULE__{players: players} = state
+      ) do
+    case PvpTablePlayers.start_game(players, username) do
+      {:ok, updated_players} ->
+        new_state = update_table_players(state, updated_players)
+        {:reply, :ok, new_state}
+    end
+  end
+
+  defp update_table_players(state, updated_players) do
+    new_state = %__MODULE__{state | players: updated_players}
+    broadcast_players_info(new_state)
+    new_state
   end
 
   defp broadcast_players_info(%__MODULE__{user_pids: user_pids, players: players}) do
