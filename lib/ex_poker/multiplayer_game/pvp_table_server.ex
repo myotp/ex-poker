@@ -3,12 +3,12 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
 
   alias ExPoker.Core.PvpGameEngine
   alias ExPoker.MultiplayerGame.TableConfig
-  alias ExPoker.MultiplayerGame.PvpTablePlayers
+  alias ExPoker.MultiplayerGame.PvpTable
   alias ExPoker.MultiplayerGame.Player
 
   defstruct [
     :table_config,
-    :players,
+    :table,
     :game_engine,
     :user_pids
   ]
@@ -20,24 +20,24 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
   @impl GenServer
   def init(args) do
     table_config = TableConfig.new!(args)
-    players = PvpTablePlayers.new(args[:max_players])
-    {:ok, %__MODULE__{table_config: table_config, players: players, user_pids: %{}}}
+    table = PvpTable.new(args[:max_players])
+    {:ok, %__MODULE__{table_config: table_config, table: table, user_pids: %{}}}
   end
 
   @impl GenServer
   def handle_call(
         {:join_table, username, buyin, client_pid},
         _from,
-        %__MODULE__{players: players, user_pids: user_pids} = state
+        %__MODULE__{table: table, user_pids: user_pids} = state
       ) do
     buyin = buyin || state.table_config.buyin
 
-    case PvpTablePlayers.join_table(players, username, buyin) do
-      {:ok, updated_players} ->
+    case PvpTable.join_table(table, username, buyin) do
+      {:ok, updated_table} ->
         new_state =
           state
           |> Map.put(:user_pids, Map.put(user_pids, username, client_pid))
-          |> update_table_players(updated_players)
+          |> update_table(updated_table)
 
         {:reply, :ok, new_state}
 
@@ -47,12 +47,12 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
   end
 
   def handle_call({:leave_table, username}, _from, %__MODULE__{user_pids: user_pids} = state) do
-    case PvpTablePlayers.leave_table(state.players, username) do
-      {:ok, chips_left, updated_players} ->
+    case PvpTable.leave_table(state.table, username) do
+      {:ok, chips_left, updated_table} ->
         new_state =
           state
           |> Map.put(:user_pids, Map.delete(user_pids, username))
-          |> update_table_players(updated_players)
+          |> update_table(updated_table)
 
         {:reply, {:ok, chips_left}, new_state}
 
@@ -64,18 +64,18 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
   def handle_call(
         {:start_game, username},
         _from,
-        %__MODULE__{players: players} = state
+        %__MODULE__{table: table} = state
       ) do
-    case PvpTablePlayers.start_game(players, username) do
-      {:ok, updated_players} ->
-        new_state = update_table_players(state, updated_players)
+    case PvpTable.start_game(table, username) do
+      {:ok, updated_table} ->
+        new_state = update_table(state, updated_table)
         {:reply, :ok, new_state, {:continue, :maybe_table_start_game}}
     end
   end
 
   @impl GenServer
-  def handle_continue(:maybe_table_start_game, %__MODULE__{players: players} = state) do
-    case PvpTablePlayers.can_table_start_game?(players) do
+  def handle_continue(:maybe_table_start_game, %__MODULE__{table: table} = state) do
+    case PvpTable.can_table_start_game?(table) do
       true ->
         broadcast_game_started(state)
         {:noreply, state, {:continue, :do_table_start_game}}
@@ -86,29 +86,29 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
   end
 
   def handle_continue(:do_table_start_game, %__MODULE__{} = state) do
-    players_info = PvpTablePlayers.players_info(state.players)
+    players_info = PvpTable.players_info(state.table)
     game_engine = PvpGameEngine.new(players_info, 1, {1, 2})
     state = %__MODULE__{state | game_engine: game_engine}
     broadcast_bets_info(state, :blinds)
     {:noreply, state}
   end
 
-  defp update_table_players(state, updated_players) do
-    new_state = %__MODULE__{state | players: updated_players}
+  defp update_table(state, updated_table) do
+    new_state = %__MODULE__{state | table: updated_table}
     broadcast_players_info(new_state)
     new_state
   end
 
-  defp broadcast_players_info(%__MODULE__{user_pids: user_pids, players: players}) do
-    players_info = PvpTablePlayers.players_info(players)
+  defp broadcast_players_info(%__MODULE__{user_pids: user_pids, table: table}) do
+    players_info = PvpTable.players_info(table)
 
     user_pids
     |> Map.values()
     |> Enum.each(fn pid -> Player.broadcast_players_info(pid, players_info) end)
   end
 
-  defp broadcast_game_started(%__MODULE__{user_pids: user_pids, players: players}) do
-    players_info = PvpTablePlayers.players_info(players)
+  defp broadcast_game_started(%__MODULE__{user_pids: user_pids, table: table}) do
+    players_info = PvpTable.players_info(table)
 
     user_pids
     |> Map.values()

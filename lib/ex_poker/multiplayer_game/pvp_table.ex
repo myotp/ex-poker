@@ -1,4 +1,4 @@
-defmodule ExPoker.MultiplayerGame.PvpTablePlayers do
+defmodule ExPoker.MultiplayerGame.PvpTable do
   @moduledoc """
   Player status: :JOINED -> :READY
   """
@@ -60,7 +60,7 @@ defmodule ExPoker.MultiplayerGame.PvpTablePlayers do
     ready_players == 2
   end
 
-  @spec players_info(%ExPoker.MultiplayerGame.PvpTablePlayers{
+  @spec players_info(%ExPoker.MultiplayerGame.PvpTable{
           :players => map()
         }) ::
           list(%{
