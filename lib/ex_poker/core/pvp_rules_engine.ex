@@ -52,7 +52,7 @@ defmodule ExPoker.Core.PvpRulesEngine do
   @spec new(
           players_info :: list({username(), non_neg_integer()}),
           button_player :: username(),
-          Enum.t({username(), non_neg_integer()})
+          Enumerable.t({username(), non_neg_integer()})
         ) :: State.t()
   def new(players_info, button_player, blinds) do
     players_order = Enum.map(players_info, fn {username, _} -> username end)

@@ -2,15 +2,27 @@ defmodule ExPoker.MultiplayerGame.PvpTable do
   @moduledoc """
   Player status: :JOINED -> :READY
   """
+
+  @type t :: %__MODULE__{
+          max_players: non_neg_integer(),
+          players: %{pos_integer() => ExPoker.MultiplayerGame.PvpTable.Player.t()}
+        }
   defstruct [
     :max_players,
     :players
   ]
 
   defmodule Player do
+    @type t :: %__MODULE__{
+            pos: pos_integer(),
+            username: String.t(),
+            chips: non_neg_integer(),
+            status: :JOINED | :READY
+          }
     defstruct [:pos, :username, :chips, :status]
   end
 
+  @spec new(pos_integer()) :: ExPoker.MultiplayerGame.PvpTable.t()
   def new(max_players) do
     %__MODULE__{max_players: max_players, players: %{}}
   end

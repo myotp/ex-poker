@@ -10,7 +10,7 @@ defmodule ExPoker.Core.HandHistory do
           blinds: [{String.t(), pos_integer()}],
           players: [%{pos: pos_integer(), username: String.t(), chips: pos_integer()}],
           button_pos: pos_integer(),
-          hole_cards: %{optional(String.t()) => String.t()},
+          hole_cards: list(),
           community_cards: String.t(),
           actions: [table_action() | player_action()],
           #
@@ -35,7 +35,7 @@ defmodule ExPoker.Core.HandHistory do
 
     # 动态牌信息
     community_cards: "",
-    hole_cards: %{},
+    hole_cards: [],
 
     # 一系列发牌玩家操作事件列表
     actions: [],

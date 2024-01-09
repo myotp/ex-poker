@@ -4,7 +4,7 @@ defmodule ExPoker.Core.PvpGameEngine do
   alias ExPoker.Core.HandHistory
 
   @type t :: %__MODULE__{
-          rules_engine: ExPoker.Core.PvpRulesEngine.t(),
+          rules_engine: ExPoker.Core.PvpRulesEngine.State.t(),
           hand_history: ExPoker.Core.HandHistory.t()
         }
   defstruct [

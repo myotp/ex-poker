@@ -6,11 +6,19 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
   alias ExPoker.MultiplayerGame.PvpTable
   alias ExPoker.MultiplayerGame.Player
 
+  @type t :: %__MODULE__{
+          table_config: TableConfig.t(),
+          table: PvpTable.t(),
+          game_engine: PvpGameEngine.t(),
+          user_pids: map(),
+          button_pos: pos_integer()
+        }
   defstruct [
     :table_config,
     :table,
     :game_engine,
-    :user_pids
+    :user_pids,
+    button_pos: 1
   ]
 
   def start_link(args) do
@@ -85,9 +93,12 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
     end
   end
 
-  def handle_continue(:do_table_start_game, %__MODULE__{} = state) do
+  def handle_continue(
+        :do_table_start_game,
+        %__MODULE__{button_pos: button_pos, table_config: cfg} = state
+      ) do
     players_info = PvpTable.players_info(state.table)
-    game_engine = PvpGameEngine.new(players_info, 1, {1, 2})
+    game_engine = PvpGameEngine.new(players_info, button_pos, {cfg.sb, cfg.bb})
     state = %__MODULE__{state | game_engine: game_engine}
     broadcast_bets_info(state, :blinds)
     {:noreply, state}
