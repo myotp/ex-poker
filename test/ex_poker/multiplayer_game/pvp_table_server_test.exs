@@ -141,21 +141,25 @@ defmodule ExPoker.MultiplayerGame.PvpTableServerTest do
       # bets_info to two players
       assert_receive {:"$gen_cast",
                       {:bets_info,
-                       {:blinds,
-                        %{
-                          :pot => 0,
-                          "anna" => %{chips_left: 499, current_street_bet: 1},
-                          "bobo" => %{chips_left: 498, current_street_bet: 2}
-                        }}}}
+                       {
+                         %{
+                           :pot => 3,
+                           "anna" => %{chips_left: 499, current_street_bet: 1},
+                           "bobo" => %{chips_left: 498, current_street_bet: 2}
+                         },
+                         :blinds
+                       }}}
 
       assert_receive {:"$gen_cast",
                       {:bets_info,
-                       {:blinds,
-                        %{
-                          :pot => 0,
-                          "anna" => %{chips_left: 499, current_street_bet: 1},
-                          "bobo" => %{chips_left: 498, current_street_bet: 2}
-                        }}}}
+                       {
+                         %{
+                           :pot => 3,
+                           "anna" => %{chips_left: 499, current_street_bet: 1},
+                           "bobo" => %{chips_left: 498, current_street_bet: 2}
+                         },
+                         :blinds
+                       }}}
     end
   end
 

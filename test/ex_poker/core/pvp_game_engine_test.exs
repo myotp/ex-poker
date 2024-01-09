@@ -46,7 +46,7 @@ defmodule ExPoker.Core.PvpGameEngineTest do
       game_engine = PvpGameEngine.new(players, 1, {1, 2})
 
       assert PvpGameEngine.bets_info(game_engine) == %{
-               :pot => 0,
+               :pot => 3,
                "anna" => %{chips_left: 499, current_street_bet: 1},
                "bobo" => %{chips_left: 498, current_street_bet: 2}
              }

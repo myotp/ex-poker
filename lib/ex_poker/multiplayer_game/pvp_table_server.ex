@@ -123,6 +123,6 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
 
     user_pids
     |> Map.values()
-    |> Enum.each(fn pid -> Player.broadcast_bets_info(pid, {last_action, bets_info}) end)
+    |> Enum.each(fn pid -> Player.broadcast_bets_info(pid, {bets_info, last_action}) end)
   end
 end

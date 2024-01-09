@@ -249,6 +249,7 @@ defmodule ExPoker.Core.PvpRulesEngine do
 
   defp make_player_bet(
          %State{
+           pot: pot,
            players: players,
            current_call_amount: current_call_amount
          } = state,
@@ -264,6 +265,8 @@ defmodule ExPoker.Core.PvpRulesEngine do
         current_street_bet: current_street_bet + amount
     }
 
+    new_pot = pot + amount
+
     current_call_amount =
       if current_street_bet + amount > current_call_amount do
         current_street_bet + amount
@@ -276,7 +279,8 @@ defmodule ExPoker.Core.PvpRulesEngine do
     %State{
       state
       | current_call_amount: current_call_amount,
-        players: players
+        players: players,
+        pot: new_pot
     }
   end
 
@@ -291,16 +295,13 @@ defmodule ExPoker.Core.PvpRulesEngine do
     %State{state | next_player: player_before_button, first_player: nil}
   end
 
-  def move_bets_to_pot(%State{players: players, pot: pot} = state) do
-    total_bets =
-      get_in(Map.values(players), [Access.all(), Access.key(:current_street_bet)])
-      |> Enum.sum()
-
+  # pot的总数量随着玩家下注已经更新, 这里只需要简单把玩家当前下注清零即可
+  def move_bets_to_pot(%State{players: players} = state) do
     new_players =
       Enum.reduce(players, %{}, fn {username, player}, acc ->
         Map.put(acc, username, %Player{player | current_street_bet: 0})
       end)
 
-    %State{state | pot: pot + total_bets, players: new_players}
+    %State{state | players: new_players}
   end
 end

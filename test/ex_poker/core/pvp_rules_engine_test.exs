@@ -20,7 +20,7 @@ defmodule ExPoker.Core.PvpRulesEngineTest do
       state =
         PvpRulesEngine.new([{"anna", 1000}, {"bob", 500}], "anna", %{"anna" => 5, "bob" => 10})
 
-      assert state.pot == 0
+      assert state.pot == 15
       assert state.players["anna"].chips_left == 995
       assert state.players["bob"].chips_left == 490
     end
@@ -46,13 +46,13 @@ defmodule ExPoker.Core.PvpRulesEngineTest do
       state =
         PvpRulesEngine.new([{"anna", 1000}, {"bob", 500}], "anna", %{"anna" => 5, "bob" => 10})
 
-      assert state.pot == 0
+      assert state.pot == 15
       assert state.players["anna"].chips_left == 995
       assert state.players["anna"].current_street_bet == 5
 
       state2 = PvpRulesEngine.handle_player_action(state, "anna", :call)
 
-      assert state2.pot == 0
+      assert state2.pot == 20
       assert state2.players["anna"].chips_left == 990
       assert state2.players["anna"].current_street_bet == 10
     end
@@ -195,7 +195,7 @@ defmodule ExPoker.Core.PvpRulesEngineTest do
         PvpRulesEngine.new([{"anna", 1000}, {"bob", 500}], "anna", %{"anna" => 5, "bob" => 10})
 
       assert PvpRulesEngine.bets_info(state) == %{
-               :pot => 0,
+               :pot => 15,
                "anna" => %{chips_left: 995, current_street_bet: 5},
                "bob" => %{chips_left: 490, current_street_bet: 10}
              }
