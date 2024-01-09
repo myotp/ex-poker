@@ -189,6 +189,19 @@ defmodule ExPoker.Core.PvpRulesEngineTest do
     end
   end
 
+  describe "bets_info/1" do
+    test "初始化玩家其它行动之前仅大小盲下注" do
+      state =
+        PvpRulesEngine.new([{"anna", 1000}, {"bob", 500}], "anna", %{"anna" => 5, "bob" => 10})
+
+      assert PvpRulesEngine.bets_info(state) == %{
+               :pot => 0,
+               "anna" => %{chips_left: 995, current_street_bet: 5},
+               "bob" => %{chips_left: 490, current_street_bet: 10}
+             }
+    end
+  end
+
   describe "next_action验证" do
     test "一方fold则另一方自动获胜" do
       state =

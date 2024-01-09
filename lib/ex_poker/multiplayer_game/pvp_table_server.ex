@@ -1,6 +1,7 @@
 defmodule ExPoker.MultiplayerGame.PvpTableServer do
   use GenServer
 
+  alias ExPoker.Core.PvpGameEngine
   alias ExPoker.MultiplayerGame.TableConfig
   alias ExPoker.MultiplayerGame.PvpTablePlayers
   alias ExPoker.MultiplayerGame.Player
@@ -8,6 +9,7 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
   defstruct [
     :table_config,
     :players,
+    :game_engine,
     :user_pids
   ]
 
@@ -67,8 +69,28 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
     case PvpTablePlayers.start_game(players, username) do
       {:ok, updated_players} ->
         new_state = update_table_players(state, updated_players)
-        {:reply, :ok, new_state}
+        {:reply, :ok, new_state, {:continue, :maybe_table_start_game}}
     end
+  end
+
+  @impl GenServer
+  def handle_continue(:maybe_table_start_game, %__MODULE__{players: players} = state) do
+    case PvpTablePlayers.can_table_start_game?(players) do
+      true ->
+        broadcast_game_started(state)
+        {:noreply, state, {:continue, :do_table_start_game}}
+
+      false ->
+        {:noreply, state}
+    end
+  end
+
+  def handle_continue(:do_table_start_game, %__MODULE__{} = state) do
+    players_info = PvpTablePlayers.players_info(state.players)
+    game_engine = PvpGameEngine.new(players_info, 1, {1, 2})
+    state = %__MODULE__{state | game_engine: game_engine}
+    broadcast_bets_info(state, :blinds)
+    {:noreply, state}
   end
 
   defp update_table_players(state, updated_players) do
@@ -83,5 +105,24 @@ defmodule ExPoker.MultiplayerGame.PvpTableServer do
     user_pids
     |> Map.values()
     |> Enum.each(fn pid -> Player.broadcast_players_info(pid, players_info) end)
+  end
+
+  defp broadcast_game_started(%__MODULE__{user_pids: user_pids, players: players}) do
+    players_info = PvpTablePlayers.players_info(players)
+
+    user_pids
+    |> Map.values()
+    |> Enum.each(fn pid -> Player.broadcast_game_started(pid, players_info) end)
+  end
+
+  defp broadcast_bets_info(
+         %__MODULE__{user_pids: user_pids, game_engine: game_engine},
+         last_action
+       ) do
+    bets_info = PvpGameEngine.bets_info(game_engine)
+
+    user_pids
+    |> Map.values()
+    |> Enum.each(fn pid -> Player.broadcast_bets_info(pid, {last_action, bets_info}) end)
   end
 end

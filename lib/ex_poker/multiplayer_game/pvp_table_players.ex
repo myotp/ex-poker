@@ -1,4 +1,7 @@
 defmodule ExPoker.MultiplayerGame.PvpTablePlayers do
+  @moduledoc """
+  Player status: :JOINED -> :READY
+  """
   defstruct [
     :max_players,
     :players
@@ -37,7 +40,7 @@ defmodule ExPoker.MultiplayerGame.PvpTablePlayers do
   def start_game(%__MODULE__{} = state, username) do
     case find_player_by_username(state, username) do
       %Player{pos: pos} ->
-        {:ok, put_in(state.players[pos].status, :WAITING)}
+        {:ok, put_in(state.players[pos].status, :READY)}
     end
   end
 
@@ -51,6 +54,21 @@ defmodule ExPoker.MultiplayerGame.PvpTablePlayers do
     end
   end
 
+  # 目前只处理二人情况, 将来升级到多人桌之后, 这里可以进入等待开始模式
+  def can_table_start_game?(%__MODULE__{players: players}) do
+    ready_players = Enum.count(players, fn {_pos, p} -> p.status == :READY end)
+    ready_players == 2
+  end
+
+  @spec players_info(%ExPoker.MultiplayerGame.PvpTablePlayers{
+          :players => map()
+        }) ::
+          list(%{
+            :pos => pos_integer(),
+            :username => String.t(),
+            :chips => pos_integer(),
+            :status => :JOINED | :READY
+          })
   def players_info(%__MODULE__{players: players}) do
     players
     |> Map.values()

@@ -123,6 +123,16 @@ defmodule ExPoker.Core.PvpRulesEngine do
     %State{state | next_action: {:winner, winner, chips_left}}
   end
 
+  @spec bets_info(ExPoker.Core.PvpRulesEngine.State.t()) :: %{
+          :pot => non_neg_integer(),
+          String.t() => %{chips_left: non_neg_integer(), current_street_bet: non_neg_integer()}
+        }
+  def bets_info(%State{pot: pot, players: players} = _state) do
+    Enum.reduce(players, %{pot: pot}, fn {username, p}, acc ->
+      Map.put(acc, username, %{chips_left: p.chips_left, current_street_bet: p.current_street_bet})
+    end)
+  end
+
   defp set_next_player(%State{} = state, username) do
     %State{state | next_player: next_player(state.players_order, username)}
   end

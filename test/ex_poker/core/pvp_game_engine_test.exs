@@ -35,4 +35,21 @@ defmodule ExPoker.Core.PvpGameEngineTest do
                {:player, {"anna", [:fold, {:call, 10}, :raise]}}
     end
   end
+
+  describe "bets_info/1" do
+    test "初始大小盲注返回" do
+      players = [
+        %{pos: 1, username: "anna", chips: 500},
+        %{pos: 2, username: "bobo", chips: 500}
+      ]
+
+      game_engine = PvpGameEngine.new(players, 1, {1, 2})
+
+      assert PvpGameEngine.bets_info(game_engine) == %{
+               :pot => 0,
+               "anna" => %{chips_left: 499, current_street_bet: 1},
+               "bobo" => %{chips_left: 498, current_street_bet: 2}
+             }
+    end
+  end
 end

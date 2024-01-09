@@ -102,7 +102,60 @@ defmodule ExPoker.MultiplayerGame.PvpTableServerTest do
       :ok = Table.join_table(pid, "anna")
       assert_receive {:"$gen_cast", {:players_info, [%{status: :JOINED}]}}
       assert :ok == Table.start_game(pid, "anna")
-      assert_receive {:"$gen_cast", {:players_info, [%{status: :WAITING}]}}
+      assert_receive {:"$gen_cast", {:players_info, [%{status: :READY}]}}
+    end
+  end
+
+  describe "牌桌游戏开始, 通知所有玩家" do
+    test "两玩家都开始, 牌局开始" do
+      {:ok, pid} = start_supervised({PvpTableServer, @table_cfg})
+      :ok = Table.join_table(pid, "anna")
+      flush(1)
+      :ok = Table.join_table(pid, "bobo")
+      flush(2)
+      :ok = Table.start_game(pid, "anna")
+      flush(2)
+      :ok = Table.start_game(pid, "bobo")
+      flush(2)
+
+      # game_started message to both players
+      assert_receive {:"$gen_cast", {:game_started, [_, _]}}
+      assert_receive {:"$gen_cast", {:game_started, [_, _]}}
+    end
+  end
+
+  describe "牌桌游戏开始, 通知大小盲下注" do
+    test "两玩家都开始, 牌局开始" do
+      {:ok, pid} = start_supervised({PvpTableServer, @table_cfg})
+      :ok = Table.join_table(pid, "anna")
+      flush(1)
+      :ok = Table.join_table(pid, "bobo")
+      flush(2)
+      :ok = Table.start_game(pid, "anna")
+      flush(2)
+      :ok = Table.start_game(pid, "bobo")
+      flush(2)
+      # game_started
+      flush(2)
+
+      # bets_info to two players
+      assert_receive {:"$gen_cast",
+                      {:bets_info,
+                       {:blinds,
+                        %{
+                          :pot => 0,
+                          "anna" => %{chips_left: 499, current_street_bet: 1},
+                          "bobo" => %{chips_left: 498, current_street_bet: 2}
+                        }}}}
+
+      assert_receive {:"$gen_cast",
+                      {:bets_info,
+                       {:blinds,
+                        %{
+                          :pot => 0,
+                          "anna" => %{chips_left: 499, current_street_bet: 1},
+                          "bobo" => %{chips_left: 498, current_street_bet: 2}
+                        }}}}
     end
   end
 

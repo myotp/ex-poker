@@ -28,6 +28,14 @@ defmodule ExPoker.Core.PvpGameEngine do
     %__MODULE__{hand_history: hand_history, rules_engine: rules_engine}
   end
 
+  @spec bets_info(ExPoker.Core.PvpGameEngine.t()) :: %{
+          :pot => non_neg_integer(),
+          String.t() => %{chips_left: non_neg_integer(), current_street_bet: non_neg_integer()}
+        }
+  def bets_info(%__MODULE__{rules_engine: rules_engine}) do
+    PvpRulesEngine.bets_info(rules_engine)
+  end
+
   defp players_info_for_rules_engine(players, button_pos) do
     [button_pos, next_pos(button_pos)]
     |> Enum.map(fn pos -> find_player_by_pos(players, pos) end)

@@ -66,7 +66,26 @@ defmodule ExPoker.MultiplayerGame.PvpTablePlayersTest do
       table = PvpTablePlayers.new(2)
       {:ok, table} = PvpTablePlayers.join_table(table, "anna", 500)
       assert {:ok, table} = PvpTablePlayers.start_game(table, "anna")
-      assert table.players[1].status == :WAITING
+      assert table.players[1].status == :READY
+    end
+  end
+
+  describe "can_table_start_game?/1" do
+    test "只有一人开始不能开始游戏" do
+      table = PvpTablePlayers.new(2)
+      {:ok, table} = PvpTablePlayers.join_table(table, "anna", 500)
+      {:ok, table} = PvpTablePlayers.start_game(table, "anna")
+      assert PvpTablePlayers.can_table_start_game?(table) == false
+    end
+
+    test "固定两人开始情况下可以开始游戏" do
+      table = PvpTablePlayers.new(2)
+      {:ok, table} = PvpTablePlayers.join_table(table, "anna", 500)
+      {:ok, table} = PvpTablePlayers.start_game(table, "anna")
+      {:ok, table} = PvpTablePlayers.join_table(table, "bobo", 500)
+      assert PvpTablePlayers.can_table_start_game?(table) == false
+      {:ok, table} = PvpTablePlayers.start_game(table, "bobo")
+      assert PvpTablePlayers.can_table_start_game?(table) == true
     end
   end
 end
